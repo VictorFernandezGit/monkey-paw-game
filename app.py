@@ -3,6 +3,7 @@ from flask import Flask, render_template, request, jsonify, session
 import openai
 import os
 from dotenv import load_dotenv
+from flask_sqlalchemy import SQLAlchemy
 
 load_dotenv()
 
@@ -10,19 +11,30 @@ app = Flask(__name__)
 app.secret_key = os.getenv("FLASK_SECRET_KEY", "dev_secret_key")
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
-LEADERBOARD_FILE = "leaderboard.json"
+# Database setup
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'postgresql://postgres:postgres@localhost:5432/monkeypaw')
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+db = SQLAlchemy(app)
 
-# Helper to load/save leaderboard
+with app.app_context():
+    db.create_all()
 
-def load_leaderboard():
-    if not os.path.exists(LEADERBOARD_FILE):
-        return {}
-    with open(LEADERBOARD_FILE, "r") as f:
-        return json.load(f)
+class User(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(80), unique=True, nullable=False)
+    streak = db.Column(db.Integer, default=0)
+    wishes_made = db.Column(db.Integer, default=0)
+    failed_wishes = db.Column(db.Integer, default=0)
+    high_score = db.Column(db.Integer, default=0)
 
-def save_leaderboard(lb):
-    with open(LEADERBOARD_FILE, "w") as f:
-        json.dump(lb, f)
+    def to_dict(self):
+        return {
+            'username': self.username,
+            'streak': self.streak,
+            'wishes_made': self.wishes_made,
+            'failed_wishes': self.failed_wishes,
+            'high_score': self.high_score
+        }
 
 # Monkey's Paw Persona Prompt
 PAW_PROMPT = """
@@ -50,18 +62,18 @@ def set_username():
     username = data.get("username", "").strip()
     if not username:
         return jsonify({"error": "Username required."}), 400
+    user = User.query.filter_by(username=username).first()
+    if not user:
+        user = User(username=username)
+        db.session.add(user)
+        db.session.commit()
     session["username"] = username
-    # Optionally reset stats for new user
-    session["streak"] = 0
-    session["failed_wishes"] = 0
-    session["wishes_made"] = 0
     return jsonify({"success": True, "username": username})
 
 @app.route("/leaderboard", methods=["GET"])
 def leaderboard():
-    lb = load_leaderboard()
-    # Return top 10 by streak
-    sorted_lb = sorted(lb.items(), key=lambda x: x[1], reverse=True)[:10]
+    users = User.query.order_by(User.high_score.desc()).limit(10).all()
+    sorted_lb = [(u.username, u.high_score) for u in users]
     return jsonify(sorted_lb)
 
 @app.route("/wish", methods=["POST"])
@@ -70,18 +82,14 @@ def wish():
         return jsonify({"error": "No username set. Please enter your username to start."}), 401
     data = request.get_json()
     user_wish = data.get("wish", "")
+    username = session["username"]
+    user = User.query.filter_by(username=username).first()
+    if not user:
+        return jsonify({"error": "User not found."}), 404
 
-    # Initialize streak, failed_wishes, and wishes_made if not present
-    if "streak" not in session:
-        session["streak"] = 0
-    if "failed_wishes" not in session:
-        session["failed_wishes"] = 0
-    if "wishes_made" not in session:
-        session["wishes_made"] = 0
-    session["wishes_made"] += 1
+    user.wishes_made += 1
 
     system_prompt = PAW_PROMPT
-
     user_input = f"I wish: {user_wish}\n\nTwist the wish as the Monkey's Paw would. Then, on the final line, write 'User outcome: WIN' or 'User outcome: LOSE' as described."
 
     try:
@@ -103,28 +111,23 @@ def wish():
         result = outcome
         # Update streak and failed_wishes based on result
         if result == "win":
-            session["streak"] += 1
-            session["failed_wishes"] = 0
+            user.streak += 1
+            user.failed_wishes = 0
         else:
-            session["streak"] = 0
-            session["failed_wishes"] += 1
-        streak = session["streak"]
-        failed_wishes = session["failed_wishes"]
-        wishes_made = session["wishes_made"]
+            user.streak = 0
+            user.failed_wishes += 1
+        streak = user.streak
+        failed_wishes = user.failed_wishes
+        wishes_made = user.wishes_made
         game_over = False
         if failed_wishes >= 5:
             game_over = True
-            # Update leaderboard if new high streak
-            lb = load_leaderboard()
-            username = session["username"]
-            if username:
-                prev_best = lb.get(username, 0)
-                if streak > prev_best:
-                    lb[username] = streak
-                    save_leaderboard(lb)
-            session["streak"] = 0
-            session["failed_wishes"] = 0
-            session["wishes_made"] = 0
+            if streak > user.high_score:
+                user.high_score = streak
+            user.streak = 0
+            user.failed_wishes = 0
+            user.wishes_made = 0
+        db.session.commit()
         return jsonify({
             "twist": content,
             "result": result,
@@ -132,7 +135,7 @@ def wish():
             "failed_wishes": failed_wishes,
             "game_over": game_over,
             "wishes_made": wishes_made,
-            "username": session["username"]
+            "username": user.username
         })
     except Exception as e:
         print("Wish error:", e)
