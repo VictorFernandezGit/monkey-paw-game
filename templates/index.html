@@ -7,16 +7,33 @@
   <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
-  <img id="pawImage" src="/static/images/paw_0.png" alt="Monkey's Paw" style="width:120px;display:block;margin:0 auto 1rem auto;" />
-  <div id="streakDisplay" style="font-size:1.3rem; margin-bottom:1rem; color:orange; font-weight:bold;">🔥 Current Streak: 0</div>
-  <div id="winMessage" style="font-size:1.1rem; margin-bottom:1rem; color:limegreen;"></div>
-  <div id="gameOverMsg" style="font-size:1.2rem; color:crimson; margin-bottom:1rem;"></div>
-  <h1>🪙 Monkey's Paw: Wishbreaker</h1>
-  <input type="text" id="wishInput" placeholder="Make your wish..." />
-  <br/>
-  <button onclick="makeWish()">Submit Wish</button>
+  <div id="usernameSection" style="margin-bottom:2rem;">
+    <input type="text" id="usernameInput" placeholder="Enter your username..." style="font-size:1.1rem; padding:0.6rem; border-radius:5px; border:1px solid #ccc;" />
+    <button id="startBtn" style="padding:0.6rem 1.2rem; font-size:1.1rem;">Start Game</button>
+    <div id="usernameError" style="color:crimson; margin-top:0.5rem;"></div>
+  </div>
 
-  <div class="result" id="twistResult"></div>
+  <div id="gameSection" style="display:none;">
+    <div id="streakDisplay" style="font-size:1.3rem; margin-bottom:1rem; color:orange; font-weight:bold;">
+      🔥 Current Streak: 0
+      <span id="wishesCount" style="font-size:1.3rem; margin-bottom: 1rem; color:#ffd700; margin-left:1.2em; font-weight:bold;">✨ Wishes Made: 0</span>
+    </div>
+    <div id="winMessage" style="font-size:1.1rem; margin-bottom:1rem; color:limegreen;"></div>
+    <div id="gameOverMsg" style="font-size:1.2rem; color:crimson; margin-bottom:1rem;"></div>
+    <h1>🪙 Monkey's Paw: Wishbreaker</h1>
+    <div id="wishInputRow" style="display:flex; align-items:stretch; justify-content:center; gap:0; margin-bottom:1em; max-width:600px; margin-left:auto; margin-right:auto;">
+      <span style="background:#222; color:#ffd700; display:flex; align-items:center; border-radius:5px 0 0 5px; font-size:1.1rem; font-family:inherit; border:1px solid #444; border-right:none; min-width:70px; justify-content:center; height:44px; box-sizing:border-box; padding:0 1rem;">I Wish</span>
+      <input type="text" id="wishInput" placeholder="for infinite pizza..." style="font-size:1.1rem; border-radius:0 5px 5px 0; border:1px solid #444; height:44px; width:100%; min-width:120px; max-width:350px; box-sizing:border-box; padding:0 0.7rem; margin:0;" />
+    </div>
+    <button onclick="makeWish()">Submit Wish</button>
+    <div class="result" id="twistResult"></div>
+    <div id="userOutcomeBox" style="margin:1rem auto; max-width:350px; font-size:1.2rem; font-weight:bold; display:none; border-radius:6px; padding:0.7rem 1rem;"></div>
+  </div>
+
+  <div id="leaderboardSection" style="margin-top:2rem;">
+    <h2 style="color:#ffd700;">🏆 Leaderboard</h2>
+    <ol id="leaderboardList" style="text-align:left; max-width:350px; margin:0 auto; color:#fff;"></ol>
+  </div>
 
   <script src="/static/script.js"></script>
 </body>
