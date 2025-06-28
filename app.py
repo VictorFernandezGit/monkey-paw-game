@@ -25,6 +25,15 @@ db = SQLAlchemy(app)
 if os.getenv('FLASK_ENV') != 'production':
     with app.app_context():
         db.create_all()
+else:
+    # In production, try to create tables if they don't exist
+    with app.app_context():
+        try:
+            db.create_all()
+            print("✅ Database tables created/verified successfully!")
+        except Exception as e:
+            print(f"⚠️ Database initialization warning: {e}")
+            # Continue running even if tables already exist
 
 class User(db.Model):
     __tablename__ = 'users'
