@@ -44,6 +44,7 @@ class User(db.Model):
     wishes_made = db.Column(db.Integer, default=0)
     failed_wishes = db.Column(db.Integer, default=0)
     high_score = db.Column(db.Integer, default=0)
+    avoided_twists = db.Column(db.Integer, default=0)
 
     def to_dict(self):
         return {
@@ -51,7 +52,8 @@ class User(db.Model):
             'streak': self.streak,
             'wishes_made': self.wishes_made,
             'failed_wishes': self.failed_wishes,
-            'high_score': self.high_score
+            'high_score': self.high_score,
+            'avoided_twists': self.avoided_twists
         }
 
 # Monkey's Paw Persona Prompt
@@ -91,7 +93,7 @@ def set_username():
 @app.route("/leaderboard", methods=["GET"])
 def leaderboard():
     users = User.query.order_by(User.high_score.desc()).limit(10).all()
-    sorted_lb = [(u.username, u.high_score) for u in users]
+    sorted_lb = [(u.username, u.high_score, u.avoided_twists) for u in users]
     return jsonify(sorted_lb)
 
 @app.route("/wish", methods=["POST"])
@@ -132,12 +134,14 @@ def wish():
             if result == "win":
                 user.streak += 1
                 user.failed_wishes = 0
+                user.avoided_twists += 1
             else:
                 user.streak = 0
                 user.failed_wishes += 1
             streak = user.streak
             failed_wishes = user.failed_wishes
             wishes_made = user.wishes_made
+            avoided_twists = user.avoided_twists
             game_over = False
             if failed_wishes >= 5:
                 game_over = True
@@ -146,6 +150,7 @@ def wish():
                 user.streak = 0
                 user.failed_wishes = 0
                 user.wishes_made = 0
+                user.avoided_twists = 0
             db.session.commit()
             return jsonify({
                 "twist": content,
@@ -154,6 +159,7 @@ def wish():
                 "failed_wishes": failed_wishes,
                 "game_over": game_over,
                 "wishes_made": wishes_made,
+                "avoided_twists": avoided_twists,
                 "username": user.username
             })
         except Exception as e:

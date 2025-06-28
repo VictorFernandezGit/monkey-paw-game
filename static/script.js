@@ -17,9 +17,9 @@ window.addEventListener('DOMContentLoaded', () => {
       const res = await fetch('/leaderboard');
       const data = await res.json();
       leaderboardList.innerHTML = '';
-      data.forEach(([user, score], idx) => {
+      data.forEach(([user, score, avoidedTwists], idx) => {
         const li = document.createElement('li');
-        li.textContent = `${user}: ${score}`;
+        li.textContent = `${user}: ${score} (Avoided: ${avoidedTwists})`;
         leaderboardList.appendChild(li);
       });
     } catch (e) {
@@ -27,6 +27,9 @@ window.addEventListener('DOMContentLoaded', () => {
     }
   }
   fetchLeaderboard();
+  
+  // Make fetchLeaderboard globally accessible
+  window.fetchLeaderboard = fetchLeaderboard;
 
   startBtn.onclick = async () => {
     const username = usernameInput.value.trim();
@@ -59,6 +62,7 @@ async function makeWish() {
   const resultDiv = document.getElementById('twistResult');
   const streakDiv = document.getElementById('streakDisplay');
   const wishesCountSpan = document.getElementById('wishesCount');
+  const avoidedTwistsCountSpan = document.getElementById('avoidedTwistsCount');
   const winMsgDiv = document.getElementById('winMessage');
   const pawImg = document.getElementById('pawImage');
   const gameOverDiv = document.getElementById('gameOverMsg');
@@ -95,6 +99,9 @@ async function makeWish() {
     if (typeof data.wishes_made !== 'undefined' && wishesCountSpan) {
       wishesCountSpan.textContent = `✨ Wishes Made: ${data.wishes_made}`;
     }
+    if (typeof data.avoided_twists !== 'undefined' && avoidedTwistsCountSpan) {
+      avoidedTwistsCountSpan.textContent = `🛡️ Avoided Twists: ${data.avoided_twists}`;
+    }
     if (typeof data.failed_wishes !== 'undefined') {
       let fails = Math.max(0, Math.min(5, data.failed_wishes));
       if (pawImg) pawImg.src = `/static/images/paw_${fails}.png`;
@@ -103,6 +110,7 @@ async function makeWish() {
       gameOverDiv.innerHTML = '☠️ The paw has claimed your soul.';
       streakDiv.childNodes[0].textContent = '🔥 Current Streak: 0 ';
       if (wishesCountSpan) wishesCountSpan.textContent = '✨ Wishes Made: 0';
+      if (avoidedTwistsCountSpan) avoidedTwistsCountSpan.textContent = '🛡️ Avoided Twists: 0';
       if (pawImg) pawImg.src = '/static/images/paw_0.png';
       resultDiv.innerHTML = `<strong>💀 Twisted!</strong><br/><em>${data.twist}</em>`;
       winMsgDiv.innerHTML = '';
