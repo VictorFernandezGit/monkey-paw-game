@@ -8,18 +8,26 @@ from flask_sqlalchemy import SQLAlchemy
 load_dotenv()
 
 app = Flask(__name__)
-app.secret_key = os.getenv("FLASK_SECRET_KEY", "dev_secret_key")
-openai.api_key = os.getenv("OPENAI_API_KEY")
+app.secret_key = os.getenv("FLASK_SECRET_KEY", "dev_secret_key_change_in_production")
+openai_api_key = os.getenv("OPENAI_API_KEY")
+if not openai_api_key:
+    print("Warning: OPENAI_API_KEY not set. The wish functionality will not work.")
 
 # Database setup
-app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'postgresql://postgres:postgres@localhost:5432/monkeypaw')
+database_url = os.getenv('DATABASE_URL')
+if database_url and database_url.startswith('postgres://'):
+    database_url = database_url.replace('postgres://', 'postgresql://', 1)
+app.config['SQLALCHEMY_DATABASE_URI'] = database_url or 'postgresql://localhost:5432/monkeypaw'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
-with app.app_context():
-    db.create_all()
+# Only create tables in development
+if os.getenv('FLASK_ENV') != 'production':
+    with app.app_context():
+        db.create_all()
 
 class User(db.Model):
+    __tablename__ = 'users'
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
     streak = db.Column(db.Integer, default=0)
@@ -78,68 +86,72 @@ def leaderboard():
 
 @app.route("/wish", methods=["POST"])
 def wish():
-    if "username" not in session:
-        return jsonify({"error": "No username set. Please enter your username to start."}), 401
-    data = request.get_json()
-    user_wish = data.get("wish", "")
-    username = session["username"]
-    user = User.query.filter_by(username=username).first()
-    if not user:
-        return jsonify({"error": "User not found."}), 404
-
-    user.wishes_made += 1
-
-    system_prompt = PAW_PROMPT
-    user_input = f"I wish: {user_wish}\n\nTwist the wish as the Monkey's Paw would. Then, on the final line, write 'User outcome: WIN' or 'User outcome: LOSE' as described."
-
     try:
-        client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-        response = client.chat.completions.create(
-            model="gpt-4o",
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_input}
-            ]
-        )
-        content = response.choices[0].message.content
-        # Parse the outcome from the final line
-        outcome = "lose"
-        if "user outcome: win" in content.lower():
-            outcome = "win"
-        elif "user outcome: lose" in content.lower():
+        if "username" not in session:
+            return jsonify({"error": "No username set. Please enter your username to start."}), 401
+        data = request.get_json()
+        user_wish = data.get("wish", "")
+        username = session["username"]
+        user = User.query.filter_by(username=username).first()
+        if not user:
+            return jsonify({"error": "User not found."}), 404
+
+        user.wishes_made += 1
+
+        system_prompt = PAW_PROMPT
+        user_input = f"I wish: {user_wish}\n\nTwist the wish as the Monkey's Paw would. Then, on the final line, write 'User outcome: WIN' or 'User outcome: LOSE' as described."
+
+        try:
+            client = openai.OpenAI(api_key=openai_api_key)
+            response = client.chat.completions.create(
+                model="gpt-4o",
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_input}
+                ]
+            )
+            content = response.choices[0].message.content
+            # Parse the outcome from the final line
             outcome = "lose"
-        result = outcome
-        # Update streak and failed_wishes based on result
-        if result == "win":
-            user.streak += 1
-            user.failed_wishes = 0
-        else:
-            user.streak = 0
-            user.failed_wishes += 1
-        streak = user.streak
-        failed_wishes = user.failed_wishes
-        wishes_made = user.wishes_made
-        game_over = False
-        if failed_wishes >= 5:
-            game_over = True
-            if streak > user.high_score:
-                user.high_score = streak
-            user.streak = 0
-            user.failed_wishes = 0
-            user.wishes_made = 0
-        db.session.commit()
-        return jsonify({
-            "twist": content,
-            "result": result,
-            "streak": streak,
-            "failed_wishes": failed_wishes,
-            "game_over": game_over,
-            "wishes_made": wishes_made,
-            "username": user.username
-        })
+            if "user outcome: win" in content.lower():
+                outcome = "win"
+            elif "user outcome: lose" in content.lower():
+                outcome = "lose"
+            result = outcome
+            # Update streak and failed_wishes based on result
+            if result == "win":
+                user.streak += 1
+                user.failed_wishes = 0
+            else:
+                user.streak = 0
+                user.failed_wishes += 1
+            streak = user.streak
+            failed_wishes = user.failed_wishes
+            wishes_made = user.wishes_made
+            game_over = False
+            if failed_wishes >= 5:
+                game_over = True
+                if streak > user.high_score:
+                    user.high_score = streak
+                user.streak = 0
+                user.failed_wishes = 0
+                user.wishes_made = 0
+            db.session.commit()
+            return jsonify({
+                "twist": content,
+                "result": result,
+                "streak": streak,
+                "failed_wishes": failed_wishes,
+                "game_over": game_over,
+                "wishes_made": wishes_made,
+                "username": user.username
+            })
+        except Exception as e:
+            print("OpenAI API error:", e)
+            return jsonify({"error": f"OpenAI API error: {str(e)}"}), 500
     except Exception as e:
-        print("Wish error:", e)
-        return jsonify({"error": str(e)}), 500
+        print("Wish endpoint error:", e)
+        return jsonify({"error": f"Server error: {str(e)}"}), 500
 
 if __name__ == "__main__":
     app.run(debug=True)

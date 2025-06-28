@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: monkey-paw
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app
+    envVars:
+      - key: FLASK_ENV
+        value: production
+      - key: FLASK_SECRET_KEY
+        generateValue: true
+      - key: OPENAI_API_KEY
+        sync: false
+    databases:
+      - name: monkeypaw-db
+        databaseName: monkeypaw
+        user: monkeypaw 
