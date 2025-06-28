@@ -1,5 +1,5 @@
 flask
-openai==0.28
+openai
 python-dotenv
 SQLAlchemy
 psycopg2-binary

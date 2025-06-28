@@ -4,6 +4,7 @@ import openai
 import os
 from dotenv import load_dotenv
 from flask_sqlalchemy import SQLAlchemy
+from openai import OpenAI
 
 load_dotenv()
 
@@ -111,7 +112,7 @@ def wish():
         user_input = f"I wish: {user_wish}\n\nTwist the wish as the Monkey's Paw would. Then, on the final line, write 'User outcome: WIN' or 'User outcome: LOSE' as described."
 
         try:
-            client = openai.OpenAI(api_key=openai_api_key)
+            client = OpenAI(api_key=openai_api_key)
             response = client.chat.completions.create(
                 model="gpt-4o",
                 messages=[
