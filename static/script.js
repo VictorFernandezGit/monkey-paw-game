@@ -5,7 +5,7 @@ window.addEventListener('DOMContentLoaded', () => {
   const startBtn = document.getElementById('startBtn');
   const usernameError = document.getElementById('usernameError');
   const gameSection = document.getElementById('gameSection');
-  const leaderboardList = document.getElementById('leaderboardList');
+  const leaderboardBody = document.getElementById('leaderboardBody');
   const userOutcomeBox = document.getElementById('userOutcomeBox');
 
   // Hide game section until username is set
@@ -16,14 +16,22 @@ window.addEventListener('DOMContentLoaded', () => {
     try {
       const res = await fetch('/leaderboard');
       const data = await res.json();
-      leaderboardList.innerHTML = '';
+      const leaderboardBody = document.getElementById('leaderboardBody');
+      leaderboardBody.innerHTML = '';
+      
       data.forEach(([user, score, avoidedTwists], idx) => {
-        const li = document.createElement('li');
-        li.textContent = `${user}: ${score} (Avoided: ${avoidedTwists})`;
-        leaderboardList.appendChild(li);
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${idx + 1}</td>
+          <td>${user}</td>
+          <td>${score}</td>
+          <td>${avoidedTwists}</td>
+        `;
+        leaderboardBody.appendChild(row);
       });
     } catch (e) {
-      leaderboardList.innerHTML = '<li>Could not load leaderboard.</li>';
+      const leaderboardBody = document.getElementById('leaderboardBody');
+      leaderboardBody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: #ff6b6b;">Could not load leaderboard.</td></tr>';
     }
   }
   fetchLeaderboard();

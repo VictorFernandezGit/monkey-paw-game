@@ -39,3 +39,172 @@ button:hover {
   margin-left: auto;
   margin-right: auto;
 }
+
+/* Leaderboard Styling */
+.leaderboard-header {
+  background: linear-gradient(135deg, #7f1d1d, #A52A2A);
+  border-radius: 10px 10px 0 0;
+  padding: 15px 20px;
+  text-align: center;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.leaderboard-header h2 {
+  color: #FFD700;
+  margin: 0;
+  font-size: 1.5rem;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.leaderboard-container {
+  background: #1a1a1a;
+  border-radius: 0 0 10px 10px;
+  overflow: hidden;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+#leaderboardTable {
+  width: 100%;
+  border-collapse: collapse;
+  color: #fff;
+}
+
+#leaderboardTable thead {
+  background: #2a2a2a;
+}
+
+#leaderboardTable th {
+  padding: 12px 15px;
+  text-align: left;
+  font-weight: bold;
+  color: #FFD700;
+  border-bottom: 2px solid #444;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+#leaderboardTable tbody tr:nth-child(odd) {
+  background: #2d2d2d;
+}
+
+#leaderboardTable tbody tr:nth-child(even) {
+  background: #1f1f1f;
+}
+
+#leaderboardTable tbody tr:hover {
+  background: #3a3a3a;
+  transition: background-color 0.2s ease;
+}
+
+#leaderboardTable td {
+  padding: 12px 15px;
+  border-bottom: 1px solid #444;
+  font-size: 0.95rem;
+}
+
+#leaderboardTable td:first-child {
+  font-weight: bold;
+  color: #FFD700;
+  text-align: center;
+}
+
+#leaderboardTable td:nth-child(3) {
+  color: #FF6B6B;
+  font-weight: bold;
+  text-align: center;
+}
+
+#leaderboardTable td:nth-child(4) {
+  color: #4ECDC4;
+  font-weight: bold;
+  text-align: center;
+}
+
+/* Medal emojis for top 3 */
+#leaderboardTable tbody tr:nth-child(1) td:first-child::before {
+  content: "🥇 ";
+}
+
+#leaderboardTable tbody tr:nth-child(2) td:first-child::before {
+  content: "🥈 ";
+}
+
+#leaderboardTable tbody tr:nth-child(3) td:first-child::before {
+  content: "🥉 ";
+}
+
+/* Game Title and Username Section */
+.game-title {
+  text-align: center;
+  margin-bottom: 2rem;
+  padding: 2rem 1rem;
+  background: linear-gradient(135deg, #1a1a1a, #2d2d2d);
+  border-radius: 15px;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+  border: 2px solid #444;
+}
+
+.game-title h1 {
+  color: #FFD700;
+  font-size: 2.5rem;
+  margin: 0 0 1rem 0;
+  text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.7);
+  font-weight: bold;
+  letter-spacing: 1px;
+}
+
+.game-subtitle {
+  color: #ccc;
+  font-size: 1.1rem;
+  margin: 0;
+  font-style: italic;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.username-form {
+  text-align: center;
+  max-width: 400px;
+  margin: 0 auto;
+  padding: 1.5rem;
+  background: rgba(45, 45, 45, 0.8);
+  border-radius: 10px;
+  border: 1px solid #555;
+}
+
+.username-form input {
+  background: #2a2a2a;
+  color: #fff;
+  border: 2px solid #555;
+  transition: border-color 0.3s ease;
+}
+
+.username-form input:focus {
+  outline: none;
+  border-color: #FFD700;
+  box-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+}
+
+.username-form button {
+  background: linear-gradient(135deg, #8B0000, #A52A2A);
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.username-form button:hover {
+  background: linear-gradient(135deg, #A52A2A, #8B0000);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.username-form button:active {
+  transform: translateY(0);
+}
