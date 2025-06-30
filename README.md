@@ -2,6 +2,34 @@
 
 A Flask web application where users make wishes that get twisted by an AI-powered Monkey's Paw.
 
+## Redis for Rate Limiting
+
+This application uses **Redis** as a backend for rate limiting via Flask-Limiter. Redis ensures that:
+- Rate limits persist across app restarts and multiple server instances (distributed/scalable)
+- Limits are enforced globally, not just per server
+- The app is protected from abuse and denial-of-service attacks
+
+### How Redis is Used
+- **Purpose:** Stores rate limit counters and metadata for each user/IP
+- **Integration:** Configured via the `REDIS_URL` environment variable
+- **Fallback:** If Redis is not available, the app uses in-memory storage (not recommended for production)
+
+### Local Redis Setup (with Docker)
+To run Redis locally for development:
+```bash
+docker run -d -p 6379:6379 --name monkeypaw-redis redis:7
+```
+
+### Environment Variable
+Add this to your `.env` file:
+```
+REDIS_URL=redis://localhost:6379
+```
+
+### Production
+- Use a managed Redis service or your own Redis server
+- Set `REDIS_URL` to your production Redis instance
+
 ## Local Development
 
 1. Install dependencies:
@@ -14,6 +42,7 @@ A Flask web application where users make wishes that get twisted by an AI-powere
    FLASK_SECRET_KEY=your_secret_key_here
    OPENAI_API_KEY=your_openai_api_key_here
    DATABASE_URL=postgresql://localhost:5432/monkeypaw
+   REDIS_URL=redis://localhost:6379
    ```
 
 3. Create the database:

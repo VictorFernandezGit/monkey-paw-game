@@ -1,3 +1,15 @@
+// CSRF token helpers (must be global)
+function getCSRFToken() {
+  return document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+}
+
+function getHeaders() {
+  return {
+    'Content-Type': 'application/json',
+    'X-CSRFToken': getCSRFToken()
+  };
+}
+
 // Username/session/leaderboard logic
 window.addEventListener('DOMContentLoaded', () => {
   const usernameSection = document.getElementById('usernameSection');
@@ -48,7 +60,7 @@ window.addEventListener('DOMContentLoaded', () => {
     try {
       const res = await fetch('/set_username', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getHeaders(),
         body: JSON.stringify({ username })
       });
       const data = await res.json();
@@ -56,6 +68,9 @@ window.addEventListener('DOMContentLoaded', () => {
         usernameSection.style.display = 'none';
         gameSection.style.display = '';
         usernameError.textContent = '';
+        
+        // Initialize spellbook functionality after game section is shown
+        initializeSpellbook();
       } else {
         usernameError.textContent = data.error || 'Could not set username.';
       }
@@ -63,7 +78,146 @@ window.addEventListener('DOMContentLoaded', () => {
       usernameError.textContent = 'Server error.';
     }
   };
+
+  // Track spellbook uses
+  let currentSpellbookUses = 0;
+  let gameOver = false;
 });
+
+// Global spellbook variables
+let spellbookModal, wishSuggestions;
+
+// Initialize spellbook functionality
+function initializeSpellbook() {
+  console.log('Initializing spellbook...');
+  const spellbookIcon = document.querySelector('.spellbook-icon');
+  spellbookModal = document.getElementById('spellbookModal');
+  const closeBtn = document.querySelector('.close');
+  wishSuggestions = document.getElementById('wishSuggestions');
+
+  console.log('Spellbook icon found:', spellbookIcon);
+  console.log('Spellbook modal found:', spellbookModal);
+  console.log('Close button found:', closeBtn);
+
+  // Open spellbook modal
+  spellbookIcon.addEventListener('click', (e) => {
+    console.log('Spellbook clicked!');
+    openSpellbook();
+  });
+
+  // Close modal when clicking X
+  closeBtn.addEventListener('click', (e) => {
+    console.log('Close button clicked!');
+    closeSpellbook();
+  });
+
+  // Close modal when clicking outside
+  window.addEventListener('click', (event) => {
+    if (event.target === spellbookModal) {
+      closeSpellbook();
+    }
+  });
+
+  // Close modal with Escape key
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && spellbookModal.style.display === 'block') {
+      closeSpellbook();
+    }
+  });
+}
+
+// Spellbook functions
+function openSpellbook() {
+  console.log('openSpellbook called');
+  const modal = document.getElementById('spellbookModal');
+  modal.style.display = 'block';
+  generateWishSuggestions();
+}
+
+function closeSpellbook() {
+  const modal = document.getElementById('spellbookModal');
+  modal.style.display = 'none';
+}
+
+function generateWishSuggestions() {
+  // Show loading state
+  const wishSuggestions = document.getElementById('wishSuggestions');
+  wishSuggestions.innerHTML = '<div class="loading">Consulting the ancient texts...</div>';
+  
+  // Call the AI-powered suggestion API
+  fetch('/generate_suggestions', {
+    method: 'POST',
+    headers: getHeaders()
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.error) {
+      // Show error message
+      wishSuggestions.innerHTML = `<div class="error-message">${data.error}</div>`;
+      return;
+    }
+    
+    const suggestions = data.suggestions;
+    
+    // Clear loading and display AI suggestions
+    wishSuggestions.innerHTML = '';
+    
+    suggestions.forEach((suggestion, index) => {
+      const suggestionDiv = document.createElement('div');
+      suggestionDiv.className = 'wish-suggestion';
+      suggestionDiv.innerHTML = `<p class="wish-text">${suggestion}</p>`;
+      
+      // Add click handler to fill wish input
+      suggestionDiv.addEventListener('click', () => {
+        const wishInput = document.getElementById('wishInput');
+        wishInput.value = suggestion;
+        closeSpellbook();
+        wishInput.focus();
+      });
+      
+      wishSuggestions.appendChild(suggestionDiv);
+    });
+  })
+  .catch(error => {
+    console.error('Error generating suggestions:', error);
+    // Fallback to static suggestions
+    showFallbackSuggestions();
+  });
+}
+
+function showFallbackSuggestions() {
+  const suggestions = [
+    "I wish for the wisdom to make the best decisions in the next 24 hours",
+    "I wish for the strength to help someone in need today",
+    "I wish for a moment of genuine gratitude for what I already have",
+    "I wish for the courage to face one small challenge today",
+    "I wish for the patience to learn something new this week"
+  ];
+
+  // Shuffle and take 3 random suggestions
+  const shuffled = suggestions.sort(() => 0.5 - Math.random());
+  const selectedSuggestions = shuffled.slice(0, 3);
+
+  // Clear and display suggestions
+  const wishSuggestions = document.getElementById('wishSuggestions');
+  wishSuggestions.innerHTML = '';
+  
+  selectedSuggestions.forEach((suggestion, index) => {
+    const suggestionDiv = document.createElement('div');
+    suggestionDiv.className = 'wish-suggestion';
+    suggestionDiv.innerHTML = `<p class="wish-text">${suggestion}</p>`;
+    
+    // Add click handler to fill wish input
+    suggestionDiv.addEventListener('click', () => {
+      const wishInput = document.getElementById('wishInput');
+      wishInput.value = suggestion;
+      closeSpellbook();
+      wishInput.focus();
+    });
+    
+    wishSuggestions.appendChild(suggestionDiv);
+  });
+}
 
 async function makeWish() {
   const wish = document.getElementById('wishInput').value;
@@ -84,9 +238,7 @@ async function makeWish() {
   try {
     const response = await fetch('/wish', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: getHeaders(),
       body: JSON.stringify({ wish }),
     });
 

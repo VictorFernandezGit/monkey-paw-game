@@ -5,3 +5,7 @@ SQLAlchemy
 psycopg2-binary
 flask-sqlalchemy
 gunicorn
+flask-limiter
+flask-wtf
+bleach
+redis
