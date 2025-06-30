@@ -12,6 +12,7 @@ from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from flask_wtf.csrf import CSRFProtect
 import secrets
+from datetime import datetime
 
 load_dotenv()
 
@@ -175,6 +176,7 @@ class User(db.Model):
     high_score = db.Column(db.Integer, default=0)
     avoided_twists = db.Column(db.Integer, default=0)
     spellbook_uses = db.Column(db.Integer, default=0)
+    session_number = db.Column(db.Integer, default=1)  # Track game sessions
 
     def to_dict(self):
         return {
@@ -184,8 +186,24 @@ class User(db.Model):
             'failed_wishes': self.failed_wishes,
             'high_score': self.high_score,
             'avoided_twists': self.avoided_twists,
-            'spellbook_uses': self.spellbook_uses
+            'spellbook_uses': self.spellbook_uses,
+            'session_number': self.session_number
         }
+
+class WishHistory(db.Model):
+    __tablename__ = 'wish_history'
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(80), db.ForeignKey('users.username'), nullable=False)
+    wish_text = db.Column(db.Text, nullable=False)
+    twist_result = db.Column(db.Text, nullable=False)
+    outcome = db.Column(db.String(10), nullable=False)  # 'win' or 'lose'
+    ip_address = db.Column(db.String(45), nullable=True)  # IPv6 compatible
+    user_agent = db.Column(db.Text, nullable=True)
+    wish_quality_bonus = db.Column(db.Float, nullable=True)
+    positive_indicator_count = db.Column(db.Integer, nullable=True)
+    negative_indicator_count = db.Column(db.Integer, nullable=True)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    session_number = db.Column(db.Integer, nullable=False, default=1)  # Game session
 
 # Monkey's Paw Persona Prompt
 PAW_PROMPT = """
@@ -242,7 +260,8 @@ def set_username():
 def leaderboard():
     try:
         users = User.query.order_by(User.high_score.desc()).limit(10).all()
-        sorted_lb = [(u.username, u.high_score, u.avoided_twists) for u in users]
+        # Return username, high_score, avoided_twists (from last game), and current streak
+        sorted_lb = [(u.username, u.high_score, u.avoided_twists, u.streak) for u in users]
         return jsonify(sorted_lb)
     except Exception as e:
         print("Leaderboard error:", e)
@@ -350,28 +369,59 @@ def wish():
             print(f"Random roll: {random.random():.2f}")
             print(f"Final result: {result}")
             
+            # Store wish history in the database
+            ip_address = request.headers.get('X-Forwarded-For', request.remote_addr)
+            user_agent = request.headers.get('User-Agent')
+            wish_history = WishHistory(
+                username=username,
+                wish_text=validated_wish,
+                twist_result=content,
+                outcome=result,
+                ip_address=ip_address,
+                user_agent=user_agent,
+                wish_quality_bonus=wish_quality_bonus,
+                positive_indicator_count=positive_count,
+                negative_indicator_count=negative_count,
+                session_number=user.session_number
+            )
+            db.session.add(wish_history)
+            
             # Update streak and failed_wishes based on result
             if result == "win":
                 user.streak += 1
                 user.failed_wishes = 0
-                user.avoided_twists += 1
             else:
                 user.streak = 0
                 user.failed_wishes += 1
             streak = user.streak
             failed_wishes = user.failed_wishes
             wishes_made = user.wishes_made
-            avoided_twists = user.avoided_twists
             game_over = False
             if failed_wishes >= 5:
                 game_over = True
                 if streak > user.high_score:
                     user.high_score = streak
+                # At game over, count avoided_twists from WishHistory for this session
+                avoided_twists = WishHistory.query.filter_by(
+                    username=username,
+                    outcome='win',
+                    session_number=user.session_number
+                ).count()
+                user.avoided_twists = avoided_twists
+                # Increment session_number for next game
+                user.session_number += 1
                 user.streak = 0
                 user.failed_wishes = 0
                 user.wishes_made = 0
-                user.avoided_twists = 0
                 user.spellbook_uses = 0
+            else:
+                # For in-game display, count so far in this session
+                avoided_twists = WishHistory.query.filter_by(
+                    username=username,
+                    outcome='win',
+                    session_number=user.session_number
+                ).count()
+                user.avoided_twists = avoided_twists
             db.session.commit()
             return jsonify({
                 "twist": content,

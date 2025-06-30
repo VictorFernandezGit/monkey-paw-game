@@ -31,13 +31,14 @@ window.addEventListener('DOMContentLoaded', () => {
       const leaderboardBody = document.getElementById('leaderboardBody');
       leaderboardBody.innerHTML = '';
       
-      data.forEach(([user, score, avoidedTwists], idx) => {
+      data.forEach(([user, score, avoidedTwists, streak], idx) => {
         const row = document.createElement('tr');
         row.innerHTML = `
           <td>${idx + 1}</td>
           <td>${user}</td>
           <td>${score}</td>
           <td>${avoidedTwists}</td>
+          <td>${streak}</td>
         `;
         leaderboardBody.appendChild(row);
       });
