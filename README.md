@@ -2,7 +2,7 @@
 
 A Flask web application where users make wishes that get twisted by an AI-powered Monkey's Paw.
 
-## Redis for Rate Limiting
+## Redis for Rate Limiting 
 
 This application uses **Redis** as a backend for rate limiting via Flask-Limiter. Redis ensures that:
 - Rate limits persist across app restarts and multiple server instances (distributed/scalable)
@@ -11,7 +11,7 @@ This application uses **Redis** as a backend for rate limiting via Flask-Limiter
 
 ### How Redis is Used
 - **Purpose:** Stores rate limit counters and metadata for each user/IP
-- **Integration:** Configured via the `REDIS_URL` environment variable
+- **Integration:** Configured via the `REDIS_URL` environment variable, this is changed in production.
 - **Fallback:** If Redis is not available, the app uses in-memory storage (not recommended for production)
 
 ### Local Redis Setup (with Docker)
