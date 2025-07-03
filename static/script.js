@@ -20,8 +20,10 @@ window.addEventListener('DOMContentLoaded', () => {
   const leaderboardBody = document.getElementById('leaderboardBody');
   const userOutcomeBox = document.getElementById('userOutcomeBox');
 
-  // Hide game section until username is set
-  gameSection.style.display = 'none';
+  if (gameSection) {
+    // On the main game page, always show the game section (user is authenticated)
+    gameSection.style.display = '';
+  }
 
   // Fetch and display leaderboard
   async function fetchLeaderboard() {

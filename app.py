@@ -1,5 +1,5 @@
 import json
-from flask import Flask, render_template, request, jsonify, session
+from flask import Flask, render_template, request, jsonify, session, redirect, url_for
 import openai
 import os
 from dotenv import load_dotenv
@@ -225,7 +225,19 @@ Respond with:
 
 @app.route("/")
 def index():
+    if "username" in session:
+        return redirect(url_for("game"))
+    return render_template("username.html")
+
+@app.route("/game")
+def game():
+    if "username" not in session:
+        return redirect(url_for("index"))
     return render_template("index.html")
+
+@app.route("/username")
+def username():
+    return render_template("username.html")
 
 @app.route("/set_username", methods=["POST"])
 @limiter.limit("10 per minute")

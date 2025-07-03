@@ -481,3 +481,100 @@ button:hover {
   border-radius: 5px;
   font-weight: bold;
 }
+
+#backgroundOverlay {
+  display: none !important;
+}
+
+.cursed-username-section {
+  position: relative;
+  z-index: 2;
+}
+
+.cursed-title {
+  animation: cursedFlicker 2.5s infinite alternate;
+  box-shadow: 0 0 30px 5px #7f1d1d66, 0 0 0 8px #000 inset;
+  border: 2px solid #7f1d1d;
+  background: linear-gradient(135deg, #1a1a1a 80%, #3a1a1a 100%);
+}
+
+.cursed-title h1 {
+  text-shadow: 0 0 8px #FFD700, 0 0 18px #7f1d1d, 2px 2px 8px #000;
+  letter-spacing: 2px;
+}
+
+.cursed-subtitle {
+  color: #ffb347;
+  text-shadow: 0 0 6px #7f1d1d, 1px 1px 2px #000;
+  animation: cursedSubtitleGlow 3s infinite alternate;
+}
+
+@keyframes cursedFlicker {
+  0% { filter: brightness(1) drop-shadow(0 0 8px #FFD700); }
+  40% { filter: brightness(1.1) drop-shadow(0 0 12px #FFD700); }
+  45% { filter: brightness(0.7) drop-shadow(0 0 2px #7f1d1d); }
+  50% { filter: brightness(1.2) drop-shadow(0 0 18px #FFD700); }
+  100% { filter: brightness(1) drop-shadow(0 0 8px #FFD700); }
+}
+
+@keyframes cursedSubtitleGlow {
+  0% { color: #ffb347; text-shadow: 0 0 6px #7f1d1d; }
+  100% { color: #FFD700; text-shadow: 0 0 16px #FFD700, 0 0 8px #7f1d1d; }
+}
+
+.cursed-form {
+  background: rgba(30, 10, 10, 0.92);
+  border: 2px solid #7f1d1d;
+  box-shadow: 0 0 24px 4px #7f1d1d55, 0 0 0 8px #000 inset;
+  border-radius: 14px;
+  padding: 2rem 1.5rem 1.5rem 1.5rem;
+  margin-top: 1.5rem;
+  position: relative;
+  z-index: 2;
+}
+
+.cursed-form input[type="text"], .cursed-form input {
+  background: #2a2a2a;
+  color: #FFD700;
+  border: 2px solid #FFD700;
+  box-shadow: 0 0 8px #FFD70044;
+  font-size: 1.2rem;
+  padding: 0.8rem;
+  border-radius: 7px;
+  margin-bottom: 1rem;
+  width: 80%;
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+.cursed-form input[type="text"]:focus, .cursed-form input:focus {
+  outline: none;
+  border-color: #ffb347;
+  box-shadow: 0 0 16px #FFD70099, 0 0 4px #7f1d1d;
+}
+
+.cursed-form button {
+  background: linear-gradient(135deg, #7f1d1d, #FFD700 90%);
+  color: #1a1a1a;
+  border: none;
+  border-radius: 7px;
+  font-weight: bold;
+  font-size: 1.1rem;
+  padding: 0.7rem 2rem;
+  box-shadow: 0 0 10px #FFD70044;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  transition: background 0.3s, color 0.3s, box-shadow 0.3s;
+}
+
+.cursed-form button:hover {
+  background: linear-gradient(135deg, #FFD700, #7f1d1d 90%);
+  color: #7f1d1d;
+  box-shadow: 0 0 18px #FFD70099, 0 0 8px #7f1d1d;
+}
+
+#usernameError {
+  color: #ff4d4d;
+  margin-top: 0.7rem;
+  font-weight: bold;
+  text-shadow: 0 0 4px #7f1d1d;
+}
