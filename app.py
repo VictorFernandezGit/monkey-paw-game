@@ -25,7 +25,7 @@ app.secret_key = os.getenv("FLASK_SECRET_KEY", secrets.token_hex(32))
 app.config['WTF_CSRF_ENABLED'] = True
 app.config['WTF_CSRF_TIME_LIMIT'] = 3600  # 1 hour
 app.config['PERMANENT_SESSION_LIFETIME'] = 3600  # 1 hour session timeout
-app.config['SESSION_COOKIE_SECURE'] = False  # Force to False for local development
+app.config['SESSION_COOKIE_SECURE'] = True  # Force to False for local development
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 
