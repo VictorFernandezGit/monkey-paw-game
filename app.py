@@ -13,6 +13,7 @@ from flask_limiter.util import get_remote_address
 from flask_wtf.csrf import CSRFProtect
 import secrets
 from datetime import datetime
+import redis
 
 load_dotenv()
 
@@ -38,7 +39,7 @@ if os.getenv('FLASK_ENV') == 'production':
         from flask_limiter import Limiter
         import redis
 
-        redis_url = os.getenv('REDIS_URL', 'redis://localhost:6379')
+        redis_url = os.getenv('REDIS_URL', 'redis://localhost:6379/0')
         print("DEBUG: Attempting to use Redis at", redis_url)
         # Try a direct connection test
         try:
@@ -277,9 +278,12 @@ def set_username():
 @limiter.limit("30 per minute")
 def leaderboard():
     try:
+        cached = redis_client.get("leaderboard")
+        if cached:
+            return jsonify(json.loads(cached))
         users = User.query.order_by(User.high_score.desc()).limit(10).all()
-        # Return username, high_score, avoided_twists (from last game), and current streak
         sorted_lb = [(u.username, u.high_score, u.avoided_twists, u.streak) for u in users]
+        redis_client.setex("leaderboard", 60, json.dumps(sorted_lb))  # Cache for 60 seconds
         return jsonify(sorted_lb)
     except Exception as e:
         print("Leaderboard error:", e)
@@ -547,4 +551,6 @@ def generate_suggestions():
 
 
 if __name__ == "__main__":
+    redis_url = os.getenv('REDIS_URL', 'redis://localhost:6379/0')
+    redis_client = redis.from_url(redis_url)
     app.run(debug=True)

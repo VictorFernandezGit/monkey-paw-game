@@ -2,17 +2,23 @@
 
 A Flask web application where users make wishes that get twisted by an AI-powered Monkey's Paw.
 
-## Redis for Rate Limiting 
+## Redis Integration
 
-This application uses **Redis** as a backend for rate limiting via Flask-Limiter. Redis ensures that:
-- Rate limits persist across app restarts and multiple server instances (distributed/scalable)
-- Limits are enforced globally, not just per server
-- The app is protected from abuse and denial-of-service attacks
+This application uses **Redis** for:
+- **Rate Limiting** (via Flask-Limiter)
+- **Leaderboard Caching** (to reduce database load and speed up leaderboard queries)
 
 ### How Redis is Used
-- **Purpose:** Stores rate limit counters and metadata for each user/IP
-- **Integration:** Configured via the `REDIS_URL` environment variable, this is changed in production.
-- **Fallback:** If Redis is not available, the app uses in-memory storage (not recommended for production)
+- **Rate Limiting:** Stores counters and metadata for each user/IP. Enforced globally and persists across restarts.
+- **Leaderboard Caching:** The `/leaderboard` endpoint caches the top 10 users in Redis for 60 seconds. This reduces database queries and improves performance.
+
+### Environment Variable
+Set the following in your `.env` file:
+```
+REDIS_URL=redis://localhost:6379/0  # For local development
+# or for Upstash/production:
+# REDIS_URL=rediss://default:<your-token>@your-upstash-endpoint:6379
+```
 
 ### Local Redis Setup (with Docker)
 To run Redis locally for development:
@@ -20,15 +26,14 @@ To run Redis locally for development:
 docker run -d -p 6379:6379 --name monkeypaw-redis redis:7
 ```
 
-### Environment Variable
-Add this to your `.env` file:
-```
-REDIS_URL=redis://localhost:6379
-```
-
 ### Production
-- Use a managed Redis service or your own Redis server
-- Set `REDIS_URL` to your production Redis instance
+- Use a managed Redis service (e.g., Upstash, Redis Cloud)
+- Set `REDIS_URL` to your production Redis instance (use `rediss://` for SSL/TLS)
+
+## Username & Game Flow
+- The root page (`/`) is the username entry page. Users must enter a username to play.
+- After entering a username, users are redirected to `/game` where the main game and leaderboard are shown.
+- Sessions are managed securely with CSRF protection enabled.
 
 ## Local Development
 
@@ -42,7 +47,7 @@ REDIS_URL=redis://localhost:6379
    FLASK_SECRET_KEY=your_secret_key_here
    OPENAI_API_KEY=your_openai_api_key_here
    DATABASE_URL=postgresql://localhost:5432/monkeypaw
-   REDIS_URL=redis://localhost:6379
+   REDIS_URL=redis://localhost:6379/0
    ```
 
 3. Create the database:
@@ -61,6 +66,7 @@ REDIS_URL=redis://localhost:6379
 ### Prerequisites
 - Render account
 - OpenAI API key
+- Managed Redis (e.g., Upstash)
 
 ### Deployment Steps
 
@@ -76,6 +82,7 @@ REDIS_URL=redis://localhost:6379
    - `FLASK_ENV`: `production`
    - `FLASK_SECRET_KEY`: Generate a secure random key
    - `OPENAI_API_KEY`: Your OpenAI API key
+   - `REDIS_URL`: Your Upstash or production Redis URL (e.g., `rediss://default:<token>@...`)
 
 4. **Create a PostgreSQL Database:**
    - Create a new PostgreSQL database on Render
@@ -94,11 +101,13 @@ REDIS_URL=redis://localhost:6379
 - In production, run `init_db.py` once after deployment
 - Make sure your OpenAI API key has sufficient credits
 - The app runs on port 5001 locally to avoid AirPlay conflicts on macOS
+- **Leaderboard is cached in Redis for 60 seconds** for performance
 
 ## Features
 
 - User registration and session management
 - AI-powered wish twisting using OpenAI GPT-4
-- Streak tracking and leaderboard
+- Streak tracking and leaderboard (with Redis caching)
 - Game over after 5 failed wishes
-- High score tracking 
+- High score tracking
+- Secure sessions and CSRF protection
