@@ -24,7 +24,7 @@ app.secret_key = os.getenv("FLASK_SECRET_KEY", secrets.token_hex(32))
 app.config['WTF_CSRF_ENABLED'] = True
 app.config['WTF_CSRF_TIME_LIMIT'] = 3600  # 1 hour
 app.config['PERMANENT_SESSION_LIFETIME'] = 3600  # 1 hour session timeout
-app.config['SESSION_COOKIE_SECURE'] = os.getenv('FLASK_ENV') == 'production'
+app.config['SESSION_COOKIE_SECURE'] = False  # Force to False for local development
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 
@@ -242,30 +242,36 @@ def username():
 @app.route("/set_username", methods=["POST"])
 @limiter.limit("10 per minute")
 def set_username():
-    try:
+    if request.is_json:
         data = request.get_json()
         if not data:
             return jsonify({"error": "Invalid request data"}), 400
-            
         username = data.get("username", "")
         validated_username, error = validate_username(username)
-        
         if error:
             return jsonify({"error": error}), 400
-            
         user = User.query.filter_by(username=validated_username).first()
         if not user:
             user = User(username=validated_username)
             db.session.add(user)
             db.session.commit()
-            
         session["username"] = validated_username
         session.permanent = True
         return jsonify({"success": True, "username": validated_username})
-        
-    except Exception as e:
-        print("Set username error:", e)
-        return jsonify({"error": "An error occurred while setting username"}), 500
+    else:
+        username = request.form.get("username", "")
+        validated_username, error = validate_username(username)
+        if error:
+            # Optionally flash error here
+            return redirect(url_for("index"))
+        user = User.query.filter_by(username=validated_username).first()
+        if not user:
+            user = User(username=validated_username)
+            db.session.add(user)
+            db.session.commit()
+        session["username"] = validated_username
+        session.permanent = True
+        return redirect(url_for("game"))
 
 @app.route("/leaderboard", methods=["GET"])
 @limiter.limit("30 per minute")

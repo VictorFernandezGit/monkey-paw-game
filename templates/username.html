@@ -8,16 +8,18 @@
   <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
+  <div id="cursedBackground"></div>
   <div id="usernameSection" class="cursed-username-section" style="margin-bottom:2rem;">
     <div class="game-title cursed-title">
       <h1>🪙 Monkey's Paw: Wishbreaker</h1>
       <p class="game-subtitle cursed-subtitle">Enter your username to begin your cursed journey...</p>
     </div>
-    <div class="username-form cursed-form">
-      <input type="text" id="usernameInput" placeholder="Enter your username..." />
-      <button id="startBtn">Start Game</button>
+    <form class="username-form cursed-form" method="POST" action="/set_username">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="text" name="username" id="usernameInput" placeholder="Enter your username..." required />
+      <button type="submit" id="startBtn">Start Game</button>
       <div id="usernameError"></div>
-    </div>
+    </form>
   </div>
   <div id="leaderboardSection" style="margin-top:2rem;">
     <div class="leaderboard-header">
@@ -40,38 +42,5 @@
     </div>
   </div>
   <script src="/static/script.js"></script>
-  <script>
-    // Only handle username logic on this page
-    document.addEventListener('DOMContentLoaded', function() {
-      const usernameInput = document.getElementById('usernameInput');
-      const startBtn = document.getElementById('startBtn');
-      const usernameError = document.getElementById('usernameError');
-      startBtn.onclick = async () => {
-        const username = usernameInput.value.trim();
-        if (!username) {
-          usernameError.textContent = 'Please enter a username.';
-          return;
-        }
-        try {
-          const res = await fetch('/set_username', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content },
-            body: JSON.stringify({ username })
-          });
-          const data = await res.json();
-          if (data.success) {
-            window.location.href = '/game';
-          } else {
-            usernameError.textContent = data.error || 'Could not set username.';
-          }
-        } catch (e) {
-          usernameError.textContent = 'Server error.';
-        }
-      };
-      usernameInput.addEventListener('keydown', function(e) {
-        if (e.key === 'Enter') startBtn.click();
-      });
-    });
-  </script>
 </body>
 </html> 
